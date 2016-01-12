@@ -79,8 +79,9 @@ class Orderable(models.Model):
         elif not self.pk and not old_pos:
             # Increment `sort_order` on objects with:
             #     sort_order > new_pos.
-            to_shift = to_shift.filter(sort_order__gte=self.sort_order)
-            to_shift.update(sort_order=models.F('sort_order') + 1)
+            to_shift = to_shift.filter(sort_order__gte=self.sort_order).order_by('-sort_order')
+            for item in to_shift:
+                item.__class__.objects.filter(pk=item.pk).update(sort_order=models.F('sort_order') + 1)
             self.sort_order = new_pos
 
         # self.sort_order decreased.

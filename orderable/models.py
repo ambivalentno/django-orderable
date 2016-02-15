@@ -90,8 +90,12 @@ class Orderable(models.Model):
             super(Orderable, self).save()
             # Increment `sort_order` on objects with:
             #     sort_order >= new_pos and sort_order < old_pos
-            to_shift = to_shift.filter(sort_order__gte=new_pos, sort_order__lt=old_pos)
-            to_shift.update(sort_order=models.F('sort_order') + 1)
+            to_shift = to_shift.filter(
+                sort_order__gte=new_pos, sort_order__lt=old_pos
+            ).order_by('-sort_order')
+            for item in to_shift:
+                item.__class__.objects.filter(pk=item.pk).update(sort_order=models.F('sort_order') + 1)
+            # to_shift.update(sort_order=models.F('sort_order') + 1)
             self.sort_order = new_pos
 
         # self.sort_order increased.
@@ -100,8 +104,10 @@ class Orderable(models.Model):
             super(Orderable, self).save()
             # Decrement sort_order on objects with:
             #     sort_order <= new_pos and sort_order > old_pos.
-            to_shift = to_shift.filter(sort_order__lte=new_pos, sort_order__gt=old_pos)
-            to_shift.update(sort_order=models.F('sort_order') - 1)
+            to_shift = to_shift.filter(sort_order__lte=new_pos, sort_order__gt=old_pos).order_by('sort_order')
+            for item in to_shift:
+                item.__class__.objects.filter(pk=item.pk).update(sort_order=models.F('sort_order') - 1)
+            # to_shift.update(sort_order=models.F('sort_order') - 1)
             self.sort_order = new_pos
 
     def _move_to_end(self, objects):
